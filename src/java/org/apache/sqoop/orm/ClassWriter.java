@@ -310,18 +310,31 @@ public class ClassWriter {
     }
   }
 
-  private String stringifierForType(String javaType, String colName) {
+  private String stringifierForType(String javaType, String colName)
+  {
+    if (javaType.equals("String")) {
+      return colName;
+    } else {
+      // This is an object type -- just call its toString()
+      // keep as null if it is null already.
+      String r = colName + "==null?null:\"\" + " + colName;
+      return r;
+    }
+  }
+
+  private String denull(String javaType, String colName, String value)
+  {
     if (javaType.equals("String")) {
       // Check if it is null, and write the null representation in such case
       String r = colName  + "==null?\"" + this.options.getNullStringValue()
-          + "\":" + colName;
+              + "\":" + value;
       return r;
     } else {
       // This is an object type -- just call its toString() in a null-safe way.
       // Also check if it is null, and instead write the null representation
       // in such case
       String r = colName  + "==null?\"" + this.options.getNullNonStringValue()
-          + "\":" + "\"\" + " + colName;
+              + "\":" + value;
       return r;
     }
   }
@@ -844,7 +857,7 @@ public class ClassWriter {
 
       first = false;
 
-      String stringExpr = stringifierForType(javaType, col);
+      String stringExpr = denull(javaType, col, stringifierForType(javaType, col));
       if (null == stringExpr) {
         LOG.error("No toString method for Java type " + javaType);
         continue;
@@ -863,7 +876,15 @@ public class ClassWriter {
         sb.append("    __sb.append(FieldFormatter.hiveStringReplaceDelims("
           + stringExpr + ", \"" + options.getHiveDelimsReplacement() + "\", "
           + "delimiters));\n");
-      } else {
+      }
+      else if (!options.isEscapeNullStrings())
+      {
+          String escaped = "FieldFormatter.escapeAndEnclose("
+                  + stringifierForType(javaType,col) + ", delimiters)";
+          String denulled =  denull(javaType,col,escaped);
+          sb.append("    __sb.append(" +denulled + ");\n");
+      }
+      else {
         sb.append("    __sb.append(FieldFormatter.escapeAndEnclose("
             + stringExpr + ", delimiters));\n");
       }

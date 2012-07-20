@@ -21,23 +21,18 @@ package org.apache.sqoop;
 import com.cloudera.sqoop.SqoopOptions.FileLayout;
 import com.cloudera.sqoop.SqoopOptions.IncrementalMode;
 import com.cloudera.sqoop.SqoopOptions.UpdateMode;
-import java.io.File;
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Properties;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.conf.Configuration;
-
 import com.cloudera.sqoop.lib.DelimiterSet;
 import com.cloudera.sqoop.lib.LargeObjectLoader;
 import com.cloudera.sqoop.tool.SqoopTool;
 import com.cloudera.sqoop.util.RandomHash;
 import com.cloudera.sqoop.util.StoredAsProperty;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.conf.Configuration;
+
+import java.io.File;
+import java.lang.reflect.Field;
+import java.util.*;
 
 /**
  * Configurable state used by Sqoop tools.
@@ -135,6 +130,7 @@ public class SqoopOptions implements Cloneable {
   private String hiveDelimsReplacement;
   @StoredAsProperty("hive.partition.key") private String hivePartitionKey;
   @StoredAsProperty("hive.partition.value") private String hivePartitionValue;
+  @StoredAsProperty("escape.null.strings") private boolean escapeNullStrings = true;
 
   // User explicit mapping of types
   private Properties mapColumnJava; // stored as map.colum.java
@@ -1922,5 +1918,18 @@ public class SqoopOptions implements Cloneable {
   public Properties getConnectionParams() {
     return connectionParams;
   }
+
+
+  /**
+   * @return the user-specified option to allow the null character to be unescaped
+   */
+  public boolean isEscapeNullStrings() {
+    return escapeNullStrings;
+  }
+
+  public void setEscapeNullStrings(boolean escapeNullStrings) {
+    this.escapeNullStrings = escapeNullStrings;
+  }
+
 }
 
