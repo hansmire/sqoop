@@ -18,14 +18,15 @@
 
 package org.apache.sqoop.tool;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.Properties;
-
+import com.cloudera.sqoop.ConnFactory;
+import com.cloudera.sqoop.Sqoop;
+import com.cloudera.sqoop.SqoopOptions;
+import com.cloudera.sqoop.SqoopOptions.InvalidOptionsException;
+import com.cloudera.sqoop.cli.RelatedOptions;
+import com.cloudera.sqoop.cli.ToolOptions;
+import com.cloudera.sqoop.lib.DelimiterSet;
+import com.cloudera.sqoop.manager.ConnManager;
+import com.cloudera.sqoop.metastore.JobData;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.OptionBuilder;
@@ -37,15 +38,13 @@ import org.apache.log4j.Category;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
-import com.cloudera.sqoop.ConnFactory;
-import com.cloudera.sqoop.Sqoop;
-import com.cloudera.sqoop.SqoopOptions;
-import com.cloudera.sqoop.SqoopOptions.InvalidOptionsException;
-import com.cloudera.sqoop.cli.RelatedOptions;
-import com.cloudera.sqoop.cli.ToolOptions;
-import com.cloudera.sqoop.lib.DelimiterSet;
-import com.cloudera.sqoop.manager.ConnManager;
-import com.cloudera.sqoop.metastore.JobData;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.Properties;
 
 /**
  * Layer on top of SqoopTool that provides some basic common code
@@ -171,6 +170,8 @@ public abstract class BaseSqoopTool extends com.cloudera.sqoop.tool.SqoopTool {
   public static final String NEW_DATASET_ARG = "new-data";
   public static final String OLD_DATASET_ARG = "onto";
   public static final String MERGE_KEY_ARG = "merge-key";
+
+  public static final String DO_NOT_ESCAPE_NULL_STRING = "do-not-escape-null-string";
 
   public BaseSqoopTool() {
   }
@@ -495,6 +496,11 @@ public abstract class BaseSqoopTool extends com.cloudera.sqoop.tool.SqoopTool {
         + "fields: ,  lines: \\n  escaped-by: \\  optionally-enclosed-by: '")
         .withLongOpt(MYSQL_DELIMITERS_ARG)
         .create());
+    formatOpts.addOption(OptionBuilder
+        .withDescription("Do not escape the null character."
+        + "E.g \\N hive's default delimiter will not be output as \\\\")
+        .withLongOpt(DO_NOT_ESCAPE_NULL_STRING)
+        .create());
 
     return formatOpts;
   }
@@ -767,8 +773,12 @@ public abstract class BaseSqoopTool extends com.cloudera.sqoop.tool.SqoopTool {
       out.setHivePartitionValue(in.getOptionValue(HIVE_PARTITION_VALUE_ARG));
     }
 
-   if (in.hasOption(MAP_COLUMN_HIVE)) {
+    if (in.hasOption(MAP_COLUMN_HIVE)) {
       out.setMapColumnHive(in.getOptionValue(MAP_COLUMN_HIVE));
+    }
+
+    if (in.hasOption(DO_NOT_ESCAPE_NULL_STRING)) {
+      out.setEscapeNullStrings(false);
     }
   }
 
